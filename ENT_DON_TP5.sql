@@ -1,0 +1,59 @@
+CREATE TABLE APPEL_SMS(
+    NCLI CHAR(7),
+    NOTEL CHAR(10),
+	DATENVOI DATE,
+	NOAPPELLE CHAR(10),
+	TAILLE NUMBER(7),
+	constraint pk_APPEL_SMS primary key(NCLI,NOTEL,DATENVOI,TAILLE)
+);
+
+
+
+ALTER TABLE CONSOTEL ADD TAILLE NUMBER(7);
+UPDATE CONSOTEL  SET TAILLE = (SELECT  TAILLE FROM APPEL_SMS);
+--1
+SELECT * FROM DIMUTILISATEUR;
+create table DIMUTILISATEUR AS
+SELECT c.NCLI,
+    c.NOM_CLI,
+    c.PRENOM_CLI,
+    c.CODEPOSTAL,
+    c.ADR_VILL,
+    c.SEXE,
+    c.DATENAISS,
+    c.PROF,
+    o.TYPAPPEL,
+    trunc(o.DATEHEURE) AS DATEJ,
+    o.NOTEL
+FROM CLIENTS c,CONSOTEL o
+WHERE o.NCLI = c.NCLI;
+
+ALTER TABLE DIMUTILISATEUR ADD NPERIOD NUMBER(4);
+ALTER TABLE DIMUTILISATEUR ADD VOLPERIOD date;
+
+
+select count(DATENVOI), count(DATENVOI)
+from APPEL_SMS a,DIMUTILISATEUR u
+where upper(a.NCLI) = upper(u.NCLI)
+and ( TO_CHAR(a.DATENVOI, 'DAY') - TO_CHAR(u.DATENAISS, 'DAY')) BETWEEN 15 and 25;
+
+---2
+select NOTEL, DATEJ,TYPAPPEL
+from DIMUTILISATEUR u
+where SEXE ='f'
+and DATEJ BETWEEN to_date('01/01/18')
+AND to_date('30/12/18');
+---3
+select u.NOTEL, ( TO_CHAR(u.NPERIOD, 'hh'))
+from DIMUTILISATEUR u
+where u.DATEJ BETWEEN to_date('01/09/18')
+AND to_date('30/09/18')
+group by  u.NOTEL, ( TO_CHAR(u.NPERIOD, 'hh'));
+
+
+--4
+select u.NCLI, u.VOLPERIOD,(( ( TO_CHAR(u.DATEJ, 'yyyy') - TO_CHAR(u.DATENAISS, 'yyyy'))/ 10) * 10) AS Tranche_Age
+from DIMUTILISATEUR u, APPEL_SMS a
+where upper(a.NCLI) = upper(u.NCLI)
+and (( ( TO_CHAR(u.DATEJ, 'yyyy') - TO_CHAR(u.DATENAISS, 'yyyy'))/ 10) * 10)>=10
+group by u.NCLI, u.VOLPERIOD, (( ( TO_CHAR(u.DATEJ, 'yyyy') - TO_CHAR(u.DATENAISS, 'yyyy'))/ 10) * 10);
